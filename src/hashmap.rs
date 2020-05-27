@@ -122,6 +122,9 @@ impl<K: Hash + PartialEq, V> HashMap<K, V> {
             }
         }
 
+        self.count  = 0;
+        self.capacity = 0;
+        unsafe { free(self.table.getMutPtr()) };
         *self = newHM;
     }
 
@@ -199,6 +202,7 @@ impl<K: Hash + PartialEq, V> HashMap<K, V> {
                 let s = &entries[index as usize];
                 if s.isEmpty() {
                     entries[emptyIndex as usize].hash = 0;
+                    unsafe { ::core::ptr::read_unaligned(&entries[emptyIndex as usize]) };  // drop it!
                     return;
                 }
 
@@ -219,14 +223,16 @@ impl<K: Hash + PartialEq, V> HashMap<K, V> {
 
 impl<K : Hash + PartialEq, V> Drop for HashMap<K, V> {
     fn drop(&mut self) {
-        let arr      = unsafe { core::slice::from_raw_parts_mut(self.table.getMutPtr(), self.capacity) };
-        for kv in arr {
-            if !kv.isEmpty() {
-                unsafe { ptr::drop_in_place(&kv.key as *const K as *mut K) };
-                unsafe { ptr::drop_in_place(&kv.value as *const V as *mut V) };
+            if self.capacity > 0 {
+            let arr      = unsafe { core::slice::from_raw_parts_mut(self.table.getMutPtr(), self.capacity) };
+            for kv in arr {
+                if !kv.isEmpty() {
+                    unsafe { ptr::drop_in_place(&kv.key as *const K as *mut K) };
+                    unsafe { ptr::drop_in_place(&kv.value as *const V as *mut V) };
+                }
             }
+            unsafe { free(self.table.getMutPtr()) }
         }
-        unsafe { free(self.table.getMutPtr()) }
     }
 }
 
@@ -237,6 +243,8 @@ impl Hash for i32 {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::vec::*;
+
     #[test]
     fn testInsert() {
         let mut hm = HashMap::<i32, i32>::new();
@@ -280,6 +288,80 @@ mod test {
             assert!(ret.is_some());
             match ret {
                 Some(o) => assert!(*o == i * 2),
+                None => assert!(false)
+            }
+        }
+
+        for i in 45..55 {
+            assert!(hm.exist(i) == false);
+        }
+
+        assert!(hm.count() == 90);
+    }
+
+    #[test]
+    fn testVecInsert() {
+        let mut hm = HashMap::<i32, Vec<i32>>::new();
+        for i in 0..100 {
+            let mut v = Vec::new();
+            for j in 0..i * 2 {
+                v.pushBack(j);
+            }
+            hm.set(i, v);
+        }
+
+        for i in 0..100 {
+            let ret = hm.get(i);
+            assert!(ret.is_some());
+            match ret {
+                Some(o) => {
+                    for j in 0..i*2 {
+                        assert!((*o)[j as usize] == j)
+                    }
+                }
+                None => assert!(false)
+            }
+        }
+    }
+
+    #[test]
+    fn testVecRemove() {
+        let mut hm = HashMap::<i32, Vec<i32>>::new();
+        for i in 0..100 {
+            let mut v = Vec::new();
+            for j in 0..i * 2 {
+                v.pushBack(j);
+            }
+            hm.set(i, v);
+        }
+
+        for i in 45..55 {
+            hm.remove(i);
+            assert!(hm.exist(i) == false);
+        }
+
+        for i in 0..45 {
+            let ret = hm.get(i);
+            assert!(ret.is_some());
+            match ret {
+                Some(o) => {
+                    for j in 0..i*2 {
+                        assert!((*o)[j as usize] == j)
+                    }
+                },
+                None => assert!(false)
+            }
+        }
+
+        for i in 55..100 {
+            let ret = hm.get(i);
+            assert!(ret.is_some());
+            match ret {
+                Some(o) => {
+                    for j in 0..i*2 {
+                        assert!((*o)[j as usize] == j)
+                    }
+                },
                 None => assert!(false)
             }
         }
