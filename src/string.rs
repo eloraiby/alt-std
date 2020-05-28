@@ -168,6 +168,8 @@ impl_unsigned!(u16);
 impl_unsigned!(u32);
 impl_unsigned!(u64);
 
+impl_unsigned!(usize);
+
 #[cfg(test)]
 mod tests {
     use super::*;
