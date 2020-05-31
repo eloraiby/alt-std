@@ -117,7 +117,6 @@ impl<T : Clone> Clone for Vec<T> {
 mod tests {
     use super::*;
 
-/*
     #[test]
     fn testDestructor() {
         let mut v = Vec::<Vec<i32>>::new();
@@ -161,7 +160,7 @@ mod tests {
         }
         assert!(v.len() == 0);
     }
-*/
+
     #[test]
     fn testPopDestructorPush() {
         let mut v = Vec::<Vec<i32>>::new();
