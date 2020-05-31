@@ -1,6 +1,7 @@
 pub unsafe fn allocRaw(size: usize) -> *mut u8 {
-    let addr = libc::memalign(core::mem::size_of::<usize>(), size) as *mut u8;
-    libc::memset(addr as *mut libc::c_void, 0, size);
+    //let addr = libc::memalign(core::mem::size_of::<usize>(), size) as *mut u8;
+    let addr = libc::calloc(core::mem::size_of::<usize>(), size) as *mut u8;
+    //libc::memset(addr as *mut libc::c_void, 0, size);
     addr
 }
 

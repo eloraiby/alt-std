@@ -28,19 +28,15 @@ impl<T> Vec<T> {
             let oldPtr      = self.elements;
             self.capacity   = newSize;
 
-            let oldArr      = unsafe { core::slice::from_raw_parts(oldPtr, self.count) };
-            let newArr      = unsafe { core::slice::from_raw_parts_mut(newPtr, self.count + 1) };
-
             for i in 0..self.count {
-                let v = unsafe { ptr::read(&oldArr[i] as *const _) };
-                newArr[i]   = v;
+                let v = unsafe { oldPtr.offset(i as isize).read() };    // v = old[i];
+                unsafe { newPtr.offset(i as isize).write(v) };          // new[i] = v;
             }
             unsafe { free(self.elements) };
             self.elements   = newPtr;
         }
-        let arr      = unsafe { core::slice::from_raw_parts_mut(self.elements, self.count + 1) };
 
-        arr[self.count] = t;
+        unsafe { self.elements.offset(self.count as isize).write(t) };
         self.count += 1
     }
 
@@ -120,6 +116,8 @@ impl<T : Clone> Clone for Vec<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+/*
     #[test]
     fn testDestructor() {
         let mut v = Vec::<Vec<i32>>::new();
@@ -145,5 +143,50 @@ mod tests {
             if *i != counter { panic!("invalid {} != {}", i, counter) }
             counter += 1;
         }
+    }
+    #[test]
+    fn testPopDestructor() {
+        let mut v = Vec::<Vec<i32>>::new();
+        for i in 0..100 {
+            let  mut vj = Vec::<i32>::new();
+            for j in 0..100 {
+                vj.pushBack(j * i);
+            }
+            v.pushBack(vj);
+        }
+
+        assert!(v.len() == 100);
+        for _ in 0..100 {
+            v.pop();
+        }
+        assert!(v.len() == 0);
+    }
+*/
+    #[test]
+    fn testPopDestructorPush() {
+        let mut v = Vec::<Vec<i32>>::new();
+        for i in 0..100 {
+            let  mut vj = Vec::<i32>::new();
+            for j in 0..100 {
+                vj.pushBack(j * i);
+            }
+            v.pushBack(vj);
+        }
+
+        for _ in 0..100 {
+            v.pop();
+        }
+
+        assert!(v.len() == 0);
+
+        for i in 0..100 {
+            let  mut vj = Vec::<i32>::new();
+            for j in 0..100 {
+                vj.pushBack(j * i);
+            }
+            v.pushBack(vj);
+        }
+
+        assert!(v.len() == 100);
     }
 }
