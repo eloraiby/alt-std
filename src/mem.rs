@@ -82,12 +82,12 @@ mod tests {
 
     #[test]
     fn testDrop() {
-        let b0 = Box::new(1234);
-        let b1 = Box::new(1234345);
+        let _b0 = Box::new(1234);
+        let _b1 = Box::new(1234345);
         let mut v = crate::vec::Vec::new();
         for i in 0..100 {
             v.pushBack(i);
         }
-        let bv = Box::new(v);
+        let _bv = Box::new(v);
     }
 }
