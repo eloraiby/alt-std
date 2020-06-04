@@ -43,7 +43,10 @@ impl<T> Unique<T> {
     pub fn getPtr(&self) -> *const T { self.ptr }
 }
 
-pub struct Box<T>(Unique<T>);
+#[repr(C)]
+pub struct Box<T>{
+    uptr: Unique<T>
+}
 
 impl<T> Box<T> {
     /// Allocates memory on the heap and then places `x` into it.
@@ -58,18 +61,18 @@ impl<T> Box<T> {
         unsafe {
             let addr = alloc::<T>();
             *addr = x;
-            Self(Unique::new(addr))
+            Self { uptr: Unique::new(addr) }
         }
     }
 
-    pub fn asRef(&self) -> &T { unsafe { &(*self.0.getPtr()) } }
-    pub fn asMut(&mut self) -> &T { unsafe { &mut (*self.0.getMutPtr()) } }
+    pub fn asRef(&self) -> &T { unsafe { &(*self.uptr.getPtr()) } }
+    pub fn asMut(&mut self) -> &T { unsafe { &mut (*self.uptr.getMutPtr()) } }
 }
 
 impl<T> Drop for Box<T> {
     fn drop(&mut self) {
         unsafe {
-            let addr = self.0.getMutPtr();
+            let addr = self.uptr.getMutPtr();
             ::core::ptr::drop_in_place(addr);
             free(addr);
         }
@@ -87,6 +90,21 @@ mod tests {
         let mut v = crate::vec::Vec::new();
         for i in 0..100 {
             v.pushBack(i);
+        }
+        let _bv = Box::new(v);
+    }
+
+    #[test]
+    fn testDropVecVec() {
+        let _b0 = Box::new(1234);
+        let _b1 = Box::new(1234345);
+        let mut v = crate::vec::Vec::new();
+        for _ in 0..100 {
+            let mut vj = crate::vec::Vec::new();
+            for j in 0..100 {
+                vj.pushBack(j);
+            }
+            v.pushBack(vj);
         }
         let _bv = Box::new(v);
     }
