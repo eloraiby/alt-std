@@ -4,6 +4,8 @@ version = "0.2.0"
 authors = ["Wael El Oraiby <wael.eloraiby@gmail.com>"]
 edition = "2018"
 license = "BSD-3-Clause"
+description = "Alternative Lightweight Std library for making small executables and shared objects"
+repository = "https://github.com/eloraiby/alt-std"
 
 [dependencies]
 libc = "0.2.69"
