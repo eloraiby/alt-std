@@ -3,6 +3,7 @@ name = "alt-std"
 version = "0.2.0"
 authors = ["Wael El Oraiby <wael.eloraiby@gmail.com>"]
 edition = "2018"
+license = "BSD-3-Clause"
 
 [dependencies]
 libc = "0.2.69"
