@@ -8,7 +8,7 @@ As of version 0.2.0 it offers the following data structures:
 * `Box<T>`
 * `Unique<T>`
 * `Vector<T>` (growable arrays)
-* `HashMap<T>`
+* `HashMap<K, V>`
 * `String`
 * `File` (only covers portions of libc)
 * `error!` and `errorn!`

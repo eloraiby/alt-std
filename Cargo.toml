@@ -1,11 +1,12 @@
 [package]
 name = "alt-std"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Wael El Oraiby <wael.eloraiby@gmail.com>"]
 edition = "2018"
 license = "BSD-3-Clause"
 description = "Alternative Lightweight Std library for making small executables and shared objects"
 repository = "https://github.com/eloraiby/alt-std"
+readme = "README.md"
 
 [dependencies]
 libc = "0.2.69"
