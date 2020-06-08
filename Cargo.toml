@@ -1,6 +1,6 @@
 [package]
 name = "alt-std"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Wael El Oraiby <wael.eloraiby@gmail.com>"]
 edition = "2018"
 license = "BSD-3-Clause"
@@ -9,7 +9,7 @@ repository = "https://github.com/eloraiby/alt-std"
 readme = "README.md"
 
 [dependencies]
-libc = "0.2.69"
+libc = "0.2.71"
 
 # [profile]
 # [profile.dev]
