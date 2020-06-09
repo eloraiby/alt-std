@@ -1,5 +1,6 @@
 use crate::vec::*;
 use ::core::cmp::*;
+use crate::hash::*;
 
 #[repr(C)]
 pub struct String {
@@ -169,6 +170,12 @@ impl_unsigned!(u32);
 impl_unsigned!(u64);
 
 impl_unsigned!(usize);
+
+impl Hash for String {
+    fn hash(&self) -> usize {
+        self.asArray().hash()
+    }
+}
 
 #[cfg(test)]
 mod tests {

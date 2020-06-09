@@ -30,10 +30,8 @@
 //
 use core::*;
 use crate::mem::*;
+use crate::hash::*;
 
-pub trait Hash {
-    fn hash(&self) -> usize;
-}
 
 struct KeyValue<K : Hash + PartialEq, V> {
     hash    : usize,

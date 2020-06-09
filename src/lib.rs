@@ -6,6 +6,7 @@ pub mod mem;
 pub mod io;
 pub mod vec;
 pub mod string;
+pub mod hash;
 pub mod hashmap;
 
 pub use string::*;
