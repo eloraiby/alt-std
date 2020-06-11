@@ -50,6 +50,7 @@ macro_rules! errorn {
     }};
 }
 
+
 #[derive(Copy, Clone)]
 pub enum FileMode {
     Read,

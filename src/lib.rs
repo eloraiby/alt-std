@@ -8,6 +8,7 @@ pub mod vec;
 pub mod string;
 pub mod hash;
 pub mod hashmap;
+pub mod stream;
 
 pub use string::*;
 pub use vec::*;

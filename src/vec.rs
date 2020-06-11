@@ -83,6 +83,19 @@ impl<T> Vec<T> {
     }
 }
 
+pub trait VecAppend<E: Copy> {
+    fn append(&mut self, arr: &[E]);
+}
+
+impl<T : Copy> VecAppend<T> for Vec<T> {
+    fn append(&mut self, arr: &[T]) {
+        // TODO: optimize this
+        for e in arr {
+            self.pushBack(e.clone());
+        }
+    }
+}
+
 impl<T> core::ops::Index<usize> for Vec<T> {
     type Output = T;
     #[inline]
