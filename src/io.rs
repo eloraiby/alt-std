@@ -1,6 +1,7 @@
 use core::*;
 use crate::string::*;
 use crate::ctypes::*;
+use crate::stream::*;
 
 #[link(name = "c")]
 extern "C"
@@ -50,20 +51,12 @@ macro_rules! errorn {
     }};
 }
 
-
-#[derive(Copy, Clone)]
-pub enum FileMode {
-    Read,
-    Write,
-    Append,
-}
-
-pub struct File {
+////////////////////////////////////////////////////////////////////////////////
+pub struct FileWriter {
     file    : *mut ::libc::FILE,
-    mode    : FileMode,
 }
 
-impl File {
+impl FileWriter {
     pub fn create(fname: &str) -> Result<Self, ()> {
         let mut sname = String::from(fname);
         sname.add('\0' as u8);
@@ -71,26 +64,7 @@ impl File {
         if f as * const _ == ::core::ptr::null() {
             Result::Err(())
         } else {
-            Result::Ok(Self { file: f, mode: FileMode::Write})
-        }
-    }
-
-    pub fn open(fname: &str) -> Result<Self, ()> {
-        let mut sname = String::from(fname);
-        sname.add('\0' as u8);
-        let f = unsafe { ::libc::fopen(sname.toStr().as_bytes().as_ptr() as *const i8, "rb\0".as_bytes().as_ptr() as *const i8) };
-        if f as * const _ == ::core::ptr::null() {
-            Result::Err(())
-        } else {
-            Result::Ok(Self { file: f, mode: FileMode::Read})
-        }
-    }
-
-    pub fn exist(fname: &str) -> bool {
-        let f = Self::open(fname);
-        match f {
-            Ok(_) => true,
-            _ => false,
+            Result::Ok(Self { file: f })
         }
     }
 
@@ -117,8 +91,59 @@ impl File {
             size
         }
     }
+}
 
-    pub fn mode(&self) -> FileMode { self.mode }
+impl Drop for FileWriter {
+    fn drop(&mut self) {
+        unsafe { ::libc::fclose(self.file) };
+    }
+}
+
+impl Stream for FileWriter {
+    fn tell(&self) -> usize { self.tell() }
+    fn size(&self) -> usize { self.size() }
+}
+
+impl StreamSeek for FileWriter {
+    fn seek(&mut self, pos: usize) -> Result<usize, ()> {
+        unsafe { ::libc::fseek(self.file, pos as i64, ::libc::SEEK_SET) };
+        Result::Ok(self.tell())
+    }
+}
+
+impl StreamWriter for FileWriter {
+    fn write(&mut self, buff: &[u8]) -> Result<usize, ()> {
+        self.write(buff)
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+pub struct FileReader {
+    file    : *mut ::libc::FILE,
+}
+
+impl FileReader {
+    pub fn open(fname: &str) -> Result<Self, ()> {
+        let mut sname = String::from(fname);
+        sname.add('\0' as u8);
+        let f = unsafe { ::libc::fopen(sname.toStr().as_bytes().as_ptr() as *const i8, "rb\0".as_bytes().as_ptr() as *const i8) };
+        if f as * const _ == ::core::ptr::null() {
+            Result::Err(())
+        } else {
+            Result::Ok(Self { file: f })
+        }
+    }
+
+    pub fn tell(&self) -> usize { unsafe { ::libc::ftell(self.file) as usize } }
+    pub fn size(&self) -> usize {
+        unsafe {
+            let curr = self.tell();
+            ::libc::fseek(self.file, 0, ::libc::SEEK_END);
+            let size = self.tell();
+            ::libc::fseek(self.file, curr as i64, ::libc::SEEK_SET);
+            size
+        }
+    }
 
     pub fn read(&mut self, buff: &mut [u8]) -> Result<usize, ()> {
         let count = unsafe {  ::libc::fread(buff.as_mut_ptr() as *mut c_void, 1, buff.len(), self.file) };
@@ -132,9 +157,58 @@ impl File {
             Result::Ok(count)
         }
     }
+}
 
-    fn close(&mut self) {
+
+impl Drop for FileReader {
+    fn drop(&mut self) {
         unsafe { ::libc::fclose(self.file) };
+    }
+}
+
+impl Stream for FileReader {
+    fn tell(&self) -> usize { self.tell() }
+    fn size(&self) -> usize { self.size() }
+}
+
+impl StreamSeek for FileReader {
+    fn seek(&mut self, pos: usize) -> Result<usize, ()> {
+        unsafe { ::libc::fseek(self.file, pos as i64, ::libc::SEEK_SET) };
+        Result::Ok(self.tell())
+    }
+}
+
+impl StreamReader for FileReader {
+    fn read(&mut self, buff: &mut [u8]) -> Result<usize, ()> {
+        self.read(buff)
+    }
+
+    fn isEOF(&self) -> bool {
+        if unsafe { ::libc::feof(self.file) } != 0 {
+            true
+        } else {
+            false
+        }
+    }
+}
+
+pub trait StreamSeek : Stream {
+    fn seek(&mut self, cursor: usize) -> Result<usize, ()>;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+pub struct File {
+}
+
+impl File {
+
+    pub fn exist(fname: &str) -> bool {
+        let f = FileReader::open(fname);
+        match f {
+            Ok(_) => true,
+            _ => false,
+        }
     }
 
     pub fn remove(fname: &str) -> Result<(), ()> {
@@ -149,19 +223,13 @@ impl File {
     }
 }
 
-impl Drop for File {
-    fn drop(&mut self) {
-        self.close()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
     fn testCreateReadRemoveFile() {
         {
-            let mut f = File::create("test.txt");
+            let mut f = FileWriter::create("test.txt");
             let s = "Hello File";
             match &mut f {
                 Ok(f) => {
@@ -174,7 +242,7 @@ mod tests {
         }
 
         {
-            let mut f = File::open("test.txt");
+            let mut f = FileReader::open("test.txt");
             let s = "Hello File";
             match &mut f {
                 Ok(f) => {

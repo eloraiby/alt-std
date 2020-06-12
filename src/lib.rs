@@ -17,8 +17,11 @@ pub use ctypes::*;
 pub use mem::*;
 
 
-#[cfg(not(test))]
-#[panic_handler]
-fn alt_std_panic(_info: &core::panic::PanicInfo) -> ! {
-    loop {}
-}
+//
+// TODO: This will break testing in dependant modules (comment until we can pass this information from cargo)
+//
+// #[cfg(not(test))]
+// #[panic_handler]
+// fn alt_std_panic(_info: &core::panic::PanicInfo) -> ! {
+//     loop {}
+// }

@@ -6,9 +6,6 @@ pub trait Stream : Drop {
 
     /// get the size of the stream
     fn size(&self) -> usize;
-
-    /// close the stream
-    fn close(&mut self);
 }
 
 pub trait StreamReader : Stream {
@@ -26,11 +23,12 @@ pub trait StreamSeek : Stream {
 
 pub struct MemoryStreamWriter {
     data    : Vec<u8>,
+    cursor  : usize,
 }
 
 impl MemoryStreamWriter {
     pub fn new() -> Self {
-        Self { data: Vec::new() }
+        Self { data: Vec::new(), cursor: 0 }
     }
 
     pub fn data(&self) -> &Vec<u8> { &self.data }
@@ -42,15 +40,35 @@ impl Drop for MemoryStreamWriter {
 }
 
 impl Stream for MemoryStreamWriter {
-    fn tell(&self) -> usize { self.data.len() }
+    fn tell(&self) -> usize { self.cursor }
     fn size(&self) -> usize { self.data.len() }
-    fn close(&mut self) {}
 }
 
 impl StreamWriter for MemoryStreamWriter {
     fn write(&mut self, buff: &[u8]) -> Result<usize, ()> {
-        self.data.append(buff);
+        let available   = self.data.len() - self.cursor;
+        let remaining   = if buff.len() < available { 0 } else { buff.len() - available };
+        let first       = usize::min(available, buff.len());
+
+        for i in 0..first {
+            self.data[self.cursor + i] = buff[i];
+        }
+        for i in 0..remaining {
+            self.data.pushBack(buff[first + i]);
+        }
+        self.cursor += buff.len();
         Ok(buff.len())
+    }
+}
+
+impl StreamSeek for MemoryStreamWriter {
+    fn seek(&mut self, cursor: usize) -> Result<usize, ()> {
+        if self.data.len() < cursor {
+            self.cursor = self.data.len();
+        } else {
+            self.cursor = cursor;
+        }
+        Ok(self.cursor)
     }
 }
 
@@ -72,7 +90,6 @@ impl MemoryStreamReader {
 impl Stream for MemoryStreamReader {
     fn tell(&self) -> usize { self.cursor }
     fn size(&self) -> usize { self.data.len() }
-    fn close(&mut self) {}
 }
 
 impl Drop for MemoryStreamReader {
@@ -96,6 +113,18 @@ impl StreamReader for MemoryStreamReader {
     }
 }
 
+impl StreamSeek for MemoryStreamReader {
+    fn seek(&mut self, cursor: usize) -> Result<usize, ()> {
+        if self.data.len() < cursor {
+            self.cursor = self.data.len();
+        } else {
+            self.cursor = cursor;
+        }
+        Ok(self.cursor)
+    }
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 #[cfg(test)]
 mod tests {
@@ -112,6 +141,16 @@ mod tests {
         for i in 0..string.len() {
             assert!(data[i] == string[i]);
         }
+        assert!(msw.seek(5) == Result::Ok(5));
+        assert!(msw.write("1234".as_bytes()) == Result::Ok(4));
+        assert!(msw.tell() == 9);
+        let string = "hello1234ld".as_bytes();
+        let data = msw.data().asArray();
+        assert!(data.len() == 11);
+        for i in 0..string.len() {
+            assert!(data[i] == string[i]);
+        }
+        assert!(msw.seek(14) == Result::Ok(11));
     }
 
     #[test]
@@ -125,5 +164,16 @@ mod tests {
         for i in 0..string.len() {
             assert!(buff[i] == string[i]);
         }
+        assert!(msr.seek(5) == Result::Ok(5));
+
+        let mut buff = [0u8; 4];
+        assert!(msr.read(&mut buff) == Result::Ok(4));
+        assert!(msr.tell() == 9);
+        let string = " wor".as_bytes();
+        for i in 0..string.len() {
+            assert!(buff[i] == string[i]);
+        }
+        assert!(msr.seek(14) == Result::Ok(11));
+
     }
 }
