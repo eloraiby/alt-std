@@ -1,4 +1,5 @@
 use core::*;
+use core::fmt::{Arguments, Write};
 use crate::string::*;
 use crate::ctypes::*;
 use crate::stream::*;
@@ -19,51 +20,66 @@ pub fn fprintStrings<'a>(f: *mut libc::FILE, arr: &[&'a str]) {
     }
 }
 
+pub fn format(args: Arguments<'_>) -> String {
+    let mut output = String::new();
+    output.write_fmt(args).expect("a formatting trait implementation returned an error");
+    output
+}
+
 #[macro_export]
-macro_rules! printf {
+macro_rules! format {
+    ($fmt:expr, $($args:expr),+) => {
+        ::alt_std::io::format(format_args!($fmt, $($args),+))
+    };
+}
+
+#[macro_export]
+macro_rules! print {
     () => {{}};
-    ($($arg:expr),+) => {{
-       unsafe { ::alt_std::io::fprintStrings(::alt_std::io::stdout, &[$(($arg).toString().toStr(),)+]) }
+    ($($args:expr),+) => {{
+       unsafe { ::alt_std::io::fprintStrings(::alt_std::io::stdout, &[format!($($args),+).toStr()]) }
     }};
 }
 
 #[macro_export]
-macro_rules! printfn {
+macro_rules! println {
     () => {{}};
-    ($($arg:expr),+) => {{
-       unsafe { ::alt_std::io::fprintStrings(::alt_std::io::stdout, &[$(($arg).toString().toStr(),)+ "\n"]) }
+    ($($args:expr),+) => {{
+       //unsafe { ::alt_std::io::fprintStrings(::alt_std::io::stdout, &[$(($arg).toString().toStr(),)+ "\n"]) }
+       unsafe { ::alt_std::io::fprintStrings(::alt_std::io::stdout, &[format!($($args),+).toStr(), "\n"]) }
+
     }};
 }
 
 #[macro_export]
-macro_rules! fprintf {
+macro_rules! fprint {
     () => {{}};
-    ($stream:expr, $($arg:expr),+) => {{
-       unsafe { ::alt_std::io::fprintStrings($stream, &[$(($arg).toString().toStr(),)+]) }
+    ($stream:expr, $($args:expr),+) => {{
+        unsafe { ::alt_std::io::fprintStrings($stream, &[format!($($args),+).toStr()]) }
     }};
 }
 
 #[macro_export]
-macro_rules! fprintfn {
+macro_rules! fprintln {
     () => {{}};
-    ($stream:expr, $($arg:expr),+) => {{
-       unsafe { ::alt_std::io::fprintStrings($stream, &[$(($arg).toString().toStr(),)+ "\n"]) }
+    ($stream:expr, $($args:expr),+) => {{
+        unsafe { ::alt_std::io::fprintStrings($stream, &[format!($($args),+).toStr(), "\n"]) }
     }};
 }
 
 #[macro_export]
 macro_rules! error {
     () => {{}};
-    ($($arg:expr),+) => {{
-       unsafe { ::alt_std::io::fprintStrings(::alt_std::io::stderr, &[$(($arg).toString().toStr(),)+]) }
+    ($($args:expr),+) => {{
+       fprint!(::alt_std::io::stderr, $($args),+)
     }};
 }
 
 #[macro_export]
-macro_rules! errorn {
+macro_rules! errorln {
     () => {{}};
-    ($($arg:expr),+) => {{
-       unsafe { ::alt_std::io::fprintStrings(::alt_std::io::stderr, &[$(($arg).toString().toStr(),)+ "\n"]) }
+    ($($args:expr),+) => {{
+        fprintln!(::alt_std::io::stderr, $($args),+)
     }};
 }
 

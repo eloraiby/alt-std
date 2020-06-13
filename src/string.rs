@@ -1,4 +1,5 @@
 use crate::vec::*;
+use ::core::*;
 use ::core::cmp::*;
 use crate::hash::*;
 
@@ -81,95 +82,25 @@ impl Clone for String {
     }
 }
 
-pub trait ToString {
-    fn toString(&self) -> String;
-}
+impl fmt::Write for String {
+    #[inline]
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.append(s);
+        Ok(())
+    }
 
-impl ToString for &str {
-    fn toString(&self) -> String { String::from(*self) }
-}
-
-macro_rules! impl_signed {
-    ($t:ident) => {
-        impl ToString for $t {
-            fn toString(&self) -> String {
-                let mut v = Vec::<u8>::new();
-                let mut s = String::new();
-                let mut current = *self;
-                let sign = current < 0;
-                if sign { current = -current }
-                loop {
-                    let u = current % 10;
-                    v.pushBack((u + '0' as Self) as u8);
-                    current /= 10;
-                    if current == 0 {
-                        if sign { v.pushBack('-' as u8); }
-                        for i in 0..v.len() {
-                            s.add(v[v.len() - i - 1]);
-                        }
-                        return s;
-                    }
-                }
-            }
-        }
-    };
-}
-
-macro_rules! impl_unsigned {
-    ($t:ident) => {
-        impl ToString for $t {
-            fn toString(&self) -> String {
-                let mut v = Vec::<u8>::new();
-                let mut s = String::new();
-                let mut current = *self;
-                loop {
-                    let u = current % 10;
-                    v.pushBack((u + '0' as Self) as u8);
-                    current /= 10;
-                    if current == 0 {
-                        for i in 0..v.len() {
-                            s.add(v[v.len() - i - 1]);
-                        }
-                        return s;
-                    }
-                }
-            }
-        }
-    };
-}
-
-impl ToString for char {
-    fn toString(&self) -> String {
-        let mut s = String::new();
-        s.add(*self as u8);
-        s
+    #[inline]
+    fn write_char(&mut self, c: char) -> fmt::Result {
+        self.add(c as u8);
+        Ok(())
     }
 }
 
-impl ToString for bool {
-    fn toString(&self) -> String {
-        let tf = if *self { "true" } else { "fasle" };
-        String::from(tf)
+impl fmt::Display for String {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.toStr())
     }
 }
-
-impl ToString for String {
-    fn toString(&self) -> String {
-        self.clone()
-    }
-}
-
-impl_signed!(i8);
-impl_signed!(i16);
-impl_signed!(i32);
-impl_signed!(i64);
-
-impl_unsigned!(u8);
-impl_unsigned!(u16);
-impl_unsigned!(u32);
-impl_unsigned!(u64);
-
-impl_unsigned!(usize);
 
 impl Hash for String {
     fn hash(&self) -> usize {

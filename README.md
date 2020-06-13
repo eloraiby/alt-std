@@ -4,15 +4,19 @@ This is a minimal standard library for rust aimed for making small executable. I
 # Alternative Standard Library
 The main objective of this library is to provide a small useful functionalities subset of the default std library that ships with rust. It works in the `#![no_std]` mode for building small sized executables/shared objects.
 
-As of version 0.2.0 it offers the following data structures:
+It offers the following data structures:
 * `Box<T>`
 * `Unique<T>`
 * `Vector<T>` (growable arrays)
 * `HashMap<K, V>`
 * `String`
 * `File` (only covers portions of libc)
-* `error!` and `errorn!`
-* `printf!` and `printfn!`
+* `MemoryStreamReader` & `MemoryStreamWriter`
+* `FileReader` & `FileWriter`
+* `format!` support
+* `print!` and `println!`
+* `error!` and `errorln!`
+* `fprint!` and `fprintln!`
 
 ## License
 ```
