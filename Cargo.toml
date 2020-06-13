@@ -9,7 +9,7 @@ repository = "https://github.com/eloraiby/alt-std"
 readme = "README.md"
 
 [dependencies]
-libc = "*"
+libc = "0.2.71"
 
 # [profile]
 # [profile.dev]
