@@ -36,6 +36,22 @@ macro_rules! printfn {
 }
 
 #[macro_export]
+macro_rules! fprintf {
+    () => {{}};
+    ($stream:expr, $($arg:expr),+) => {{
+       unsafe { ::alt_std::io::fprintStrings($stream, &[$(($arg).toString().toStr(),)+]) }
+    }};
+}
+
+#[macro_export]
+macro_rules! fprintfn {
+    () => {{}};
+    ($stream:expr, $($arg:expr),+) => {{
+       unsafe { ::alt_std::io::fprintStrings($stream, &[$(($arg).toString().toStr(),)+ "\n"]) }
+    }};
+}
+
+#[macro_export]
 macro_rules! error {
     () => {{}};
     ($($arg:expr),+) => {{
@@ -157,6 +173,11 @@ impl FileReader {
             Result::Ok(count)
         }
     }
+
+    pub fn readLine(&mut self, buff: &mut [u8]) -> Result<usize, ()> {
+        let n = unsafe { ::libc::fgets(buff.as_mut_ptr() as *mut i8, buff.len() as c_int, self.file) };
+        Result::Ok(n as usize)
+    }
 }
 
 
@@ -197,9 +218,7 @@ pub trait StreamSeek : Stream {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-pub struct File {
-}
+pub struct File {}
 
 impl File {
 
@@ -222,6 +241,15 @@ impl File {
         }
     }
 }
+
+////////////////////////////////////////////////////////////////////////////////
+pub mod console {
+    pub fn readLine(s: &mut [u8]) -> usize {
+        unsafe { ::libc::strlen(::libc::fgets(s.as_mut_ptr() as *mut i8, s.len() as super::c_int, super::stdin)) as usize }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(test)]
 mod tests {
