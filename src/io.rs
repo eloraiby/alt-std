@@ -29,7 +29,7 @@ pub fn format(args: Arguments<'_>) -> String {
 #[macro_export]
 macro_rules! format {
     ($fmt:expr, $($args:expr),+) => {
-        ::alt_std::io::format(format_args!($fmt, $($args),+))
+        $crate::io::format(format_args!($fmt, $($args),+))
     };
 }
 
@@ -37,7 +37,7 @@ macro_rules! format {
 macro_rules! print {
     () => {{}};
     ($($args:expr),+) => {{
-       unsafe { ::alt_std::io::fprintStrings(::alt_std::io::stdout, &[format!($($args),+).toStr()]) }
+       unsafe { $crate::io::fprintStrings($crate::io::stdout, &[format!($($args),+).toStr()]) }
     }};
 }
 
@@ -45,9 +45,7 @@ macro_rules! print {
 macro_rules! println {
     () => {{}};
     ($($args:expr),+) => {{
-       //unsafe { ::alt_std::io::fprintStrings(::alt_std::io::stdout, &[$(($arg).toString().toStr(),)+ "\n"]) }
-       unsafe { ::alt_std::io::fprintStrings(::alt_std::io::stdout, &[format!($($args),+).toStr(), "\n"]) }
-
+       unsafe { $crate::io::fprintStrings($crate::io::stdout, &[format!($($args),+).toStr(), "\n"]) }
     }};
 }
 
@@ -55,7 +53,7 @@ macro_rules! println {
 macro_rules! fprint {
     () => {{}};
     ($stream:expr, $($args:expr),+) => {{
-        unsafe { ::alt_std::io::fprintStrings($stream, &[format!($($args),+).toStr()]) }
+        unsafe { $crate::io::fprintStrings($stream, &[format!($($args),+).toStr()]) }
     }};
 }
 
@@ -63,7 +61,7 @@ macro_rules! fprint {
 macro_rules! fprintln {
     () => {{}};
     ($stream:expr, $($args:expr),+) => {{
-        unsafe { ::alt_std::io::fprintStrings($stream, &[format!($($args),+).toStr(), "\n"]) }
+        unsafe { $crate::io::fprintStrings($stream, &[format!($($args),+).toStr(), "\n"]) }
     }};
 }
 
@@ -71,7 +69,7 @@ macro_rules! fprintln {
 macro_rules! error {
     () => {{}};
     ($($args:expr),+) => {{
-       fprint!(::alt_std::io::stderr, $($args),+)
+       fprint!($crate::io::stderr, $($args),+)
     }};
 }
 
@@ -79,7 +77,7 @@ macro_rules! error {
 macro_rules! errorln {
     () => {{}};
     ($($args:expr),+) => {{
-        fprintln!(::alt_std::io::stderr, $($args),+)
+        fprintln!($crate::io::stderr, $($args),+)
     }};
 }
 
@@ -157,7 +155,7 @@ pub struct FileReader {
 impl FileReader {
     pub fn open(fname: &str) -> Result<Self, ()> {
         let mut sname = String::from(fname);
-        sname.add('\0' as u8);
+        sname.add(b'\0');
         let f = unsafe { ::libc::fopen(sname.toStr().as_bytes().as_ptr() as *const i8, "rb\0".as_bytes().as_ptr() as *const i8) };
         if f as * const _ == ::core::ptr::null() {
             Result::Err(())
@@ -237,7 +235,6 @@ pub trait StreamSeek : Stream {
 pub struct File {}
 
 impl File {
-
     pub fn exist(fname: &str) -> bool {
         let f = FileReader::open(fname);
         match f {
@@ -248,12 +245,37 @@ impl File {
 
     pub fn remove(fname: &str) -> Result<(), ()> {
         let mut sname = String::from(fname);
-        sname.add('\0' as u8);
+        sname.add(b'\0');
         let f = unsafe { ::libc::remove(sname.toStr().as_bytes().as_ptr() as *const i8) };
-        if f < 0 {
+        if f != 0 {
             Err(())
         } else {
             Ok(())
+        }
+    }
+
+    pub fn rename(oldName: &str, newName: &str) -> Result<(), ()> {
+        let mut o = String::from(oldName);
+        o.add(b'\0');
+        let mut n = String::from(newName);
+        n.add(b'\0');
+        let f = unsafe { ::libc::rename(o.toStr().as_bytes().as_ptr() as *const i8, n.toStr().as_bytes().as_ptr() as *const i8) };
+        if f != 0 {
+            Err(())
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn tmpname() -> String {
+        unsafe {
+            let s = crate::mem::allocArray::<i8>(::libc::L_tmpnam as usize);
+            ::libc::tmpnam(s);
+            let len = ::libc::strlen(s);
+            let slice = ::core::slice::from_raw_parts(s as *const u8, len);
+            let st = String::from(&::core::str::from_utf8(slice).unwrap());
+            crate::mem::free(s);
+            st
         }
     }
 }
@@ -272,21 +294,22 @@ mod tests {
     use super::*;
     #[test]
     fn testCreateReadRemoveFile() {
+        let name = File::tmpname();
         {
-            let mut f = FileWriter::create("test.txt");
+            let mut f = FileWriter::create(name.toStr());
             let s = "Hello File";
             match &mut f {
                 Ok(f) => {
                     let res = f.write(s.as_bytes());
                     assert!(res.unwrap() == s.as_bytes().len());
-                    assert!(File::exist("test.txt"));
+                    assert!(File::exist(name.toStr()));
                 },
                 _ => panic!("couldn't create file!")
             }
         }
 
         {
-            let mut f = FileReader::open("test.txt");
+            let mut f = FileReader::open(name.toStr());
             let s = "Hello File";
             match &mut f {
                 Ok(f) => {
@@ -301,7 +324,7 @@ mod tests {
         }
 
         {
-            File::remove("test.txt").unwrap();
+            File::remove(name.toStr()).unwrap();
         }
     }
 }

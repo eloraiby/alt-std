@@ -9,6 +9,10 @@ pub struct String {
 }
 
 impl String {
+    pub fn withCapacity(c: usize) -> Self {
+        Self { data: Vec::withCapacity(c) }
+    }
+
     pub fn new() -> Self { Self { data: Vec::new() } }
     pub fn from(s: &str) -> Self {
         let mut st = Self::new();
@@ -27,6 +31,7 @@ impl String {
     }
 
     pub fn asArray(&self) -> &[u8] { self.data.asArray() }
+    pub fn asMutArray(&mut self) -> &mut [u8] { self.data.asMutArray() }
 }
 
 pub trait Append<T> {
@@ -111,19 +116,20 @@ impl Hash for String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::io::*;
     #[test]
     fn testConversion() {
         {
             let u : u32 = 12345;
-            if String::from("12345") != u.toString() {
-                panic!("fail {}", u.toString().toStr());
+            if String::from("12345") != format(format_args!("{}", u)) {
+                panic!("fail {}", u);
             }
         }
 
         {
             let i : i32 = -12345;
-            if String::from("-12345") != i.toString() {
-                panic!("fail {}", i.toString().toStr());
+            if String::from("-12345") != format(format_args!("{}", i)) {
+                panic!("fail {}", i);
             }
         }
     }

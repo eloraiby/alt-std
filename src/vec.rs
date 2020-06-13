@@ -9,6 +9,17 @@ pub struct Vec<T> {
 }
 
 impl<T> Vec<T> {
+    pub fn withCapacity(c: usize) -> Self {
+        if c == 0 { Self::new() }
+        else {
+            Self {
+                elements: unsafe { allocRaw(c * mem::size_of::<T>()) as *mut T },
+                count   : 0,
+                capacity: c,
+            }
+        }
+    }
+
     pub fn new() -> Self {
         Self {
             elements: ptr::null_mut(),
@@ -18,6 +29,7 @@ impl<T> Vec<T> {
     }
 
     pub fn asArray(&self) -> &[T] { unsafe { core::slice::from_raw_parts(self.elements, self.count) } }
+    pub fn asMutArray(&mut self) -> &mut [T] { unsafe { core::slice::from_raw_parts_mut(self.elements, self.count) } }
 
     pub fn len(&self) -> usize { self.count }
 

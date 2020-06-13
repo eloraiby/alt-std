@@ -175,6 +175,6 @@ mod tests {
         }
         assert!(msr.seek(14) == Result::Ok(11));
 
-        assert!("0.1234f32".parse::<f32>().unwrap() == 0.1234_f32);
+        assert!("0.1234".parse::<f32>().unwrap() == 0.1234_f32);
     }
 }
