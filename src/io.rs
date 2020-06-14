@@ -34,51 +34,41 @@ macro_rules! format {
 }
 
 #[macro_export]
-macro_rules! print {
-    () => {{}};
-    ($($args:expr),+) => {{
-       unsafe { $crate::io::fprintStrings($crate::io::stdout, &[format!($($args),+).toStr()]) }
-    }};
-}
-
-#[macro_export]
-macro_rules! println {
-    () => {{}};
-    ($($args:expr),+) => {{
-       unsafe { $crate::io::fprintStrings($crate::io::stdout, &[format!($($args),+).toStr(), "\n"]) }
-    }};
-}
-
-#[macro_export]
 macro_rules! fprint {
     () => {{}};
-    ($stream:expr, $($args:expr),+) => {{
-        unsafe { $crate::io::fprintStrings($stream, &[format!($($args),+).toStr()]) }
-    }};
+    ($stream:expr, $arg:expr) => { fprint!($stream, "{}", $arg) };
+    ($stream:expr, $($args:expr),+) => { unsafe { $crate::io::fprintStrings($stream, &[format!($($args),+).toStr()]) } };
 }
 
 #[macro_export]
 macro_rules! fprintln {
-    () => {{}};
-    ($stream:expr, $($args:expr),+) => {{
-        unsafe { $crate::io::fprintStrings($stream, &[format!($($args),+).toStr(), "\n"]) }
-    }};
+    () => {};
+    ($stream:expr, $arg:expr) => { fprintln!($stream, "{}", $arg) };
+    ($stream:expr, $($args:expr),+) => { unsafe { $crate::io::fprintStrings($stream, &[format!($($args),+).toStr(), "\n"]) } };
+}
+
+#[macro_export]
+macro_rules! print {
+    () => {};
+    ($($args:expr),+) => { fprint!($crate::io::stdout, $($args),+) };
+}
+
+#[macro_export]
+macro_rules! println {
+    () => {};
+    ($($args:expr),+) => { fprintln!($crate::io::stdout, $($args),+) };
 }
 
 #[macro_export]
 macro_rules! error {
-    () => {{}};
-    ($($args:expr),+) => {{
-       fprint!($crate::io::stderr, $($args),+)
-    }};
+    () => {};
+    ($($args:expr),+) => { fprint!($crate::io::stderr, $($args),+) };
 }
 
 #[macro_export]
 macro_rules! errorln {
-    () => {{}};
-    ($($args:expr),+) => {{
-        fprintln!($crate::io::stderr, $($args),+)
-    }};
+    () => {};
+    ($($args:expr),+) => { fprintln!($crate::io::stderr, $($args),+) };
 }
 
 ////////////////////////////////////////////////////////////////////////////////
