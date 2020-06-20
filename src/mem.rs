@@ -67,6 +67,23 @@ impl<T> Box<T> {
 
     pub fn asRef(&self) -> &T { unsafe { &(*self.uptr.getPtr()) } }
     pub fn asMut(&mut self) -> &T { unsafe { &mut (*self.uptr.getMutPtr()) } }
+    pub fn intoRaw(self) -> *mut T {
+        let m = ::core::mem::ManuallyDrop::new(self);
+        m.uptr.ptr
+    }
+
+    pub fn fromRaw(raw: *mut T) -> Self {
+        Self { uptr: Unique::new(raw) }
+    }
+
+    pub fn unbox(self) -> T {
+        unsafe {
+            let ptr = self.uptr.ptr;
+            let v = self.intoRaw().read();
+            free(ptr);
+            v
+        }
+    }
 }
 
 impl<T> Drop for Box<T> {
@@ -78,6 +95,8 @@ impl<T> Drop for Box<T> {
         }
     }
 }
+
+
 
 #[cfg(test)]
 mod tests {
@@ -107,5 +126,34 @@ mod tests {
             v.pushBack(vj);
         }
         let _bv = Box::new(v);
+    }
+
+    #[test]
+    fn testBoxUnbox() {
+        let b = Box::new(1234);
+        let _v = b.unbox();
+    }
+
+    #[test]
+    fn testBoxUnboxVecVec() {
+        let _b0 = Box::new(1234);
+        let _b1 = Box::new(1234345);
+        let mut v = crate::vec::Vec::new();
+        for _ in 0..100 {
+            let mut vj = crate::vec::Vec::new();
+            for j in 0..100 {
+                vj.pushBack(j);
+            }
+            v.pushBack(vj);
+        }
+        let v2 = Box::new(v);
+        let _v3 = v2.unbox();
+    }
+
+    #[test]
+    fn testBoxFromToRaw() {
+        let b = Box::new(1234);
+        let r = b.intoRaw();
+        let _b = Box::fromRaw(r);
     }
 }
