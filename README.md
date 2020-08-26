@@ -1,3 +1,4 @@
+# Deprecated - replaced by https://github.com/NeoCogi/rs-alloc & https://github.com/NeoCogi/rs-streams
 ## Disclaimer
 This is a minimal standard library for rust aimed for making small executable. IT IS NOT A DROP IN REPLACEMENT for the rust standard library! You have been advised.
 
